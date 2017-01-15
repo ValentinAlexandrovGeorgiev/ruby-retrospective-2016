@@ -1,3 +1,20 @@
+
+MELTING_POINTS_CELSIUS = {
+  'water' => 0,
+  'ethanol' => -114,
+  'gold' => 1_064,
+  'silver' => 961.8,
+  'copper' => 1_085,
+}
+BOILING_POINTS_CELSIUS = {
+  'water' => 100,
+  'ethanol' => 78.37,
+  'gold' => 2_700,
+  'silver' => 2_162,
+  'copper' => 2_567,
+}
+
+
 def convert_between_temperature_units(degrees, degrees_unit, converted_unit)
 
   units = "#{degrees_unit}#{converted_unit}"
@@ -11,33 +28,17 @@ def convert_between_temperature_units(degrees, degrees_unit, converted_unit)
     'FK' => (degrees + 459.67) * 5 / 9
   }
 
-  hash_temp_converter[units] ? hash_temp_converter[units].round(5) : degrees
+  hash_temp_converter[units] ? hash_temp_converter[units] : degrees
 end
 
 def melting_point_of_substance(substance, degrees_unit)
 
-  hash_melting_point_celsius = {
-    'water' => 0,
-    'ethanol' => -114,
-    'gold' => 1064,
-    'silver' => 961.8,
-    'copper' => 1085
-  }
-
-  convert_between_temperature_units(hash_melting_point_celsius[substance], 'C', degrees_unit)
+  convert_between_temperature_units(MELTING_POINTS_CELSIUS[substance], 'C', degrees_unit)
 
 end
 
 def boiling_point_of_substance(substance, degrees_unit)
 
-  hash_boiling_point_celsius = {
-    'water' => 100,
-    'ethanol' => 78.37,
-    'gold' => 2700,
-    'silver' => 2162,
-    'copper' => 2567
-  }
-
-  convert_between_temperature_units(hash_boiling_point_celsius[substance], 'C', degrees_unit)
+  convert_between_temperature_units(BOILING_POINTS_CELSIUS[substance], 'C', degrees_unit)
 
 end
