@@ -1,4 +1,3 @@
-
 MELTING_POINTS_CELSIUS = {
   'water' => 0,
   'ethanol' => -114,
@@ -6,6 +5,7 @@ MELTING_POINTS_CELSIUS = {
   'silver' => 961.8,
   'copper' => 1_085,
 }
+
 BOILING_POINTS_CELSIUS = {
   'water' => 100,
   'ethanol' => 78.37,
@@ -13,7 +13,6 @@ BOILING_POINTS_CELSIUS = {
   'silver' => 2_162,
   'copper' => 2_567,
 }
-
 
 def convert_between_temperature_units(degrees, degrees_unit, converted_unit)
 
@@ -34,11 +33,9 @@ end
 def melting_point_of_substance(substance, degrees_unit)
 
   convert_between_temperature_units(MELTING_POINTS_CELSIUS[substance], 'C', degrees_unit)
-
 end
 
 def boiling_point_of_substance(substance, degrees_unit)
 
   convert_between_temperature_units(BOILING_POINTS_CELSIUS[substance], 'C', degrees_unit)
-
 end
