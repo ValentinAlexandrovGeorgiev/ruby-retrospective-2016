@@ -1,72 +1,93 @@
+class LibOption
+  class Argument
+    attr_accessor :name, :block
+
+    def initialize(name, block)
+      @name = name
+      @block = block
+    end
+  end
+
+  class Option
+    attr_accessor :short, :long, :help, :block
+
+    def initialize(short, long, help, block)
+      @short = '-' + short
+      @long = '--' + long
+      @help = help
+      @block = block
+    end
+
+    def named_like?(string)
+      string.include?(short) || string.include?(long)
+    end
+
+    def param?(string)
+      string.include?("=") || ( string[1] != '-' && string.size > 2 )
+    end
+
+    def get_param(str)
+      return true unless param?(str)
+      str.include?("=") ? str.slice!(long + "=") : str.slice!(short)
+      str
+    end
+  end
+
+  class OptionWithParameter < Option
+    attr_accessor :param
+
+    def initialize(short, long, help, block, param)
+      super(short, long, help, block)
+      @param = param
+    end
+  end
+end
+
 class CommandParser
-  attr_accessor :cmd_name
-
-  def initialize(cmd_name)
-    @cmd_name = cmd_name
-    @arg_blocks = []
-    @opt_blocks = []
-    @opt_param_blocks = []
-    @args = []
+  def initialize(command_name)
+    @command_name = command_name
+    @arguments = []
+    @current_argument = 0
     @options = []
-    @options_param = []
   end
 
-  def argument(arg, &arg_block)
-    @arg_blocks.push(arg_block)
-    arg = arg.insert(0, '[').insert(-1, ']')
-    @args.push(arg)
-  end
-
-  def option(short_option, option, text, &opt_block)
-    @opt_blocks.push(opt_block)
-
-    @options.push([short_option.insert(0, '-'), option.insert(0, '--'), text])
-
-  end
-
-  def option_with_parameter(short_param, opt_p, text, pl, &opt_param_block)
-    @opt_param_blocks.push(opt_param_block)
-    param = [short_param.insert(0, '-'), opt_p.insert(0, '--'), text, pl]
-    @options_param.push(param)
+  def option?(string)
+    string[0] == '-'
   end
 
   def parse(command_runner, argv)
-    argv.each do |arg|
-      if option? arg
-        call_block(@opt_blocks, command_runner, true)
-      elsif arg.start_with?("-")
-        call_block(@opt_param_blocks, command_runner, convert_param(arg))
-      else
-        call_block(@arg_blocks, command_runner, arg)
+    argv.each do |elem|
+      if option?(elem) && @options.index { |x| x.named_like?(elem) } != nil
+        i = @options.index { |x| x.named_like?(elem) }
+        @options[i].block.call(command_runner, @options[i].get_param(elem))
+      elsif !option?(elem)
+        @arguments[@current_argument].block.call(command_runner, elem)
+        @current_argument += 1
       end
     end
   end
 
-  def call_block(blocks, command_runner, arg)
-    unless blocks.empty?
-      blocks.first.call(command_runner, arg)
-      blocks.shift
-    end
+  def argument(name, &block)
+    @arguments.push(LibOption::Argument.new(name, block))
+  end
+
+  def option(short, long, help, &block)
+    @options.push(LibOption::Option.new(short, long, help, block))
+  end
+
+  def option_with_parameter(short, long, help, param, &block)
+    opt = LibOption::OptionWithParameter.new(short, long, help, block, param)
+    @options.push(opt)
   end
 
   def help
-    args_doc = "Usage: #{cmd_name} #{@args.join(" ")}\n" unless @args.empty?
-    opts_doc = ""
-    opts_params_doc = ""
-    @options.map { |opt| opts_doc << "    #{opt[0]}, #{opt[1]} #{opt[2]}\n" }
-    @options_param.map do |opt|
-      opts_params_doc << "    #{opt[0]}, #{opt[1]}=#{opt[3]} #{opt[2]}\n"
+    oput = "Usage: #{@command_name}"
+    @arguments.each { |x| oput = oput + ' [' + x.name + ']' }
+    @options.each do |x|
+      oput = oput + "\n    " + x.short + ', ' + x.long
+      oput = oput + "=" + x.param if x.is_a?(LibOption::OptionWithParameter)
+      oput = oput + ' ' + x.help
     end
-    args_doc << opts_doc << opts_params_doc
-  end
-
-  def convert_param(arg)
-    arg.start_with?("--") ? arg.split("=")[1] : arg[2..-1]
-  end
-
-  def option?(arg)
-    short_option = arg.start_with?("-") && arg.size == 2
-    long_option = arg.start_with?("--") && !arg.include?("=")
-    short_option || long_option
+    oput
   end
 end
