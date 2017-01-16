@@ -212,6 +212,11 @@ RSpec.describe 'Version' do
       it "accepts a Version instance as an argumnt" do
         expect(range.include?(Version.new('1.1.2'))).to be true
       end
+      it 'fails if version is not in the range' do
+        range = Version::Range.new('1.2.3', '1.5.1')
+        expect(range.include?(Version.new('1.5.1'))).to be(false)
+        expect(range.include?(Version.new('1.2.2'))).to be(false)
+      end
     end
 
     describe "#to_a" do
