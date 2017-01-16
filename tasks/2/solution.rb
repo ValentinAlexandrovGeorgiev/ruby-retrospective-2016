@@ -1,52 +1,57 @@
 class Hash
-  def fetch_deep(hash_path)
-    hash_params = hash_path.split('.')
-    this = self
-
-    hash_params.each do |param|
-      param = /\A\d+\z/.match(param) ? param.to_i : param.to_sym
-      this = this[param]
-    end
-
-    this
+  def fetch_deep(path)
+    self.fetch_deep_recursion(path.split("."))
   end
 
-  def set_hash_value(result_format, key, keys, value)
-    keys.map!(&:to_sym)
-    key = keys.pop
-    keys.inject(result_format, :fetch)[key] = self.fetch_deep(value)
+  def fetch_deep_recursion(path_array)
+    key =  change_key_type(path_array[0])
+    return nil if key == nil
+    return self[key] if path_array.length == 1
+
+    self[key] = array_to_hash(self[key]) if self[key].is_a?(Array)
+
+    self[key].fetch_deep_recursion(path_array[1..path_array.length])
   end
 
-  def recursive_traverse(hash, result_format, keys)
+  def change_key_type(key)
+    if self[key.to_sym]
+      key = key.to_sym
+    elsif self[key]
+      key
+    end
+  end
 
-    hash.each do |key, value|
-      keys.push(key)
-      if value.is_a?(Hash) || value.is_a?(Array)
-        recursive_traverse(value, result_format, keys)
-      else
-        self.set_hash_value(result_format, key, keys, value)
-      end
+  def array_to_hash(array)
+    hash = []
+
+    array.map do |element|
+      hash << [array.index(element).to_s, element]
     end
 
+    hash.to_h
   end
 
   def reshape(result_format)
-
     keys = []
-    returned_hash = result_format.clone
+    result_format.map do |key, value|
+      keys << [
+        key,
+        value.is_a?(Hash) ? reshape(value) : fetch_deep(value)
+      ]
+    end
 
-    self.recursive_traverse(returned_hash, returned_hash, keys)
-
-    returned_hash
+    keys.to_h
   end
 end
 
 class Array
   def reshape(shape)
     format_result = []
-    self.each { |item| format_result.push(item.reshape(shape)) }
+    self.each do |element|
+      target = {}
+      shape.keys.each { |key| target[key] = element.fetch_deep(shape[key]) }
+      format_result << target
+    end
     format_result
   end
 end
-
-
